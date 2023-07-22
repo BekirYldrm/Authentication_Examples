@@ -4,6 +4,7 @@ const express = require("express");
 const ejs = require("ejs");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
+const encrypt =  require("mongoose-encryption");
 
 const app = express();
 
@@ -13,10 +14,10 @@ app.use(express.static("public"));
 
 mongoose.connect("mongodb://0.0.0.0:27017/userDB");
 const userSchema = new mongoose.Schema({ email: String, password: String });
+const secret= "şifrelemedizisi"
+userSchema.plugin( encrypt , { secret : secret , encryptedFields:["password"] });
+
 const userModel = mongoose.model("User", userSchema)
-
-
-
 
 
 
@@ -29,15 +30,12 @@ app.route("/")
 
 
 
-
-
-
-
-
 app.route("/login")
+
     .get((req, res) => {
         res.render("login");
     })
+
     .post((req,res)=>{
         userModel.findOne({  email: req.body.username }).then(doc=>{
             if(doc){
@@ -58,14 +56,12 @@ app.route("/login")
 
 
 
-
-
-
-
 app.route("/register")
+
     .get((req, res) => {
         res.render("register");
     })
+
     .post((req, res) => {
         const newUser = new userModel({
             email: req.body.username,
