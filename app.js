@@ -1,54 +1,41 @@
 //jshint esversion:6
-require('dotenv').config()
-const express = require("express");
-const ejs = require("ejs");
-const bodyParser = require("body-parser");
-const mongoose = require("mongoose");
 
-// const encrypt =  require("mongoose-encryption");
-// const md5 = require('md5');
-// const bcrypt = require('bcrypt');
-// const saltRounds = 10;
-
-const session = require('express-session');
-const passport = require('passport');
-const passportLocalMongoose = require('passport-local-mongoose');
-const GoogleStrategy = require('passport-google-oauth20').Strategy;
-const FacebookStrategy = require('passport-facebook');
+import express  from 'express';
+import bodyParser from 'body-parser';
+import mongoose from 'mongoose';
+import { config } from "dotenv";
+config();
+import session from 'express-session';
+import passport from 'passport';
+import passportLocalMongoose from 'passport-local-mongoose';
+import GoogleStrategy  from 'passport-google-oauth20';
+import FacebookStrategy from 'passport-facebook';
 
 
 const app = express();
 
 
-app.set("view engine", "ejs");
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.static("public"));
-
-app.use(session({ secret: "anahtardizi", resave: false, saveUninitialized: false }));
-app.use(passport.initialize());
-app.use(passport.session());
+app
+    .set("view engine", "ejs")
+    .use(bodyParser.urlencoded({ extended: true }))
+    .use(express.static("public"))
+    .use(session({ secret: "anahtardizi", resave: false, saveUninitialized: false }))
+    .use(passport.initialize())
+    .use(passport.session());
 
 
 mongoose.connect("mongodb://0.0.0.0:27017/userDB");
 
-const userSchema = new mongoose.Schema({ email: String, password: String, googleId: String, fbId: String ,secret:String});
+const userSchema = new mongoose.Schema({ email: String, password: String, googleId: String, fbId: String, secret: String });
 
 userSchema.plugin(passportLocalMongoose);
-
-
 
 const userModel = mongoose.model("User", userSchema)
 
 passport.use(userModel.createStrategy());
 
-
-passport.serializeUser(function (user, done) {
-    done(null, user);
-});
-
-passport.deserializeUser(function (user, done) {
-    done(null, user);
-});
+passport.serializeUser(function (user, done) { done(null, user) });
+passport.deserializeUser(function (user, done) { done(null, user) });
 
 passport.use(new GoogleStrategy({
 
@@ -85,6 +72,7 @@ passport.use(new FacebookStrategy({
     clientSecret: process.env.FACEBOOK_APP_SECRET,
     callbackURL: process.env.FACEBOOK_CALLBACK_URL,
     profileFields: ["emails", "displayName", "name"]
+
 },
     function (accessToken, refreshToken, profile, cb) {
 
@@ -166,10 +154,6 @@ app.route("/login")
     });
 
 
-
-
-
-
 app.route("/register")
 
     .get((req, res) => {
@@ -193,13 +177,13 @@ app.route("/register")
 app.route("/secrets")
     .get((req, res) => {
 
-        userModel.find({"secret" : {$ne : null}}).then(foundUsers => {
-            if(foundUsers){
-                res.render("secrets" , {userWithSecrets : foundUsers})
+        userModel.find({ "secret": { $ne: null } }).then(foundUsers => {
+            if (foundUsers) {
+                res.render("secrets", { userWithSecrets: foundUsers })
             }
-        }).catch(err=> {
-        console.log(err);
-    });
+        }).catch(err => {
+            console.log(err);
+        });
 
     });
 
@@ -216,7 +200,7 @@ app.route("/logout")
 
 app.route("/submit")
     .get((req, res) => {
-        
+
         if (req.isAuthenticated) {
 
             res.render("submit");
@@ -226,22 +210,20 @@ app.route("/submit")
             res.redirect("/login");
         }
     })
-    .post((req,res) => {
-      
+    .post((req, res) => {
 
-        userModel.findById(req.user._id).then(foundUser =>{
-            if(foundUser){
-                foundUser.secret =req.body.secret ;
+
+        userModel.findById(req.user._id).then(foundUser => {
+            if (foundUser) {
+                foundUser.secret = req.body.secret;
                 foundUser.save().then(() => {
                     res.redirect("/secrets")
                 });
             }
         }).catch(err => {
-        console.log(err);})
+            console.log(err);
+        })
     });
-
-
-
 
 app.listen(3000, () => {
     console.log("sunucu 3000 portunda çalışıyor.");
